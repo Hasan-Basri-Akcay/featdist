@@ -13,6 +13,8 @@ pip install featdist
 ## Using featimp
 Detailed [Medium post](https://medium.com/@hasan.basri.akcay) on using featimp.
 
+Train test distribution is so crucial for machine learning. Train and test distribution should be similar for better ml models. Therefore, looking for distribution differences in exploratory data analysis is one of the most important steps of data science. The featdist library aims to get better and faster this process.
+
 ```
 from featdist import numerical_ttt_dist
 
@@ -39,5 +41,3 @@ categorical_ttt_dist(train=X_train, val=X_val, features=cat_features, target='ta
 ```
 <img src="/outputs/categorical_ttt_train_test.png?raw=true"/>
 <img src="/outputs/categorical_ttt_train_val.png?raw=true"/>
-
-## Working Progress...
