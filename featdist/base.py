@@ -128,6 +128,8 @@ def numerical_ttt_dist(train=None, test=None, val=None, features=[], agg_func='m
     fig.tight_layout()
     plt.show()
     df_stats.dropna(axis=1, inplace=True)
+    if val is not None:  df_stats.sort_values('train_val_trend_corr', inplace=True, ascending=False)
+    if test is not None:  df_stats.sort_values('train_test_trend_corr', inplace=True, ascending=False)
     return df_stats
 
 
@@ -147,6 +149,9 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
         figsize (int): Figure size.
         ylim (tuple): Y-limits of the axes.
         sharey (bool): Controls sharing of properties among y (sharey) axes.
+    
+    Returns:
+        DataFrame
     '''
 
     # Default Parameter Preparations
@@ -173,7 +178,10 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
     if len(features) % ncols != 0:
         nrows += 1
     fig, axes = plt.subplots(nrows, ncols, figsize=(figsize, round(nrows*figsize/ncols)), sharey=sharey)
+    df_stats = pd.DataFrame(columns=['feature', 'train_nunique', 'test_nunique', 'val_nunique', 'train_test_rmse',
+                                    'train_val_rmse', 'val_test_rmse', 'train_val_target_rmse'])
     for index, (ax,feature) in enumerate(zip(axes.ravel()[:len(features)],features)):        
+        # Graph
         train_counts = train[feature].value_counts()
         diff_test = []
         if test is not None: 
@@ -193,9 +201,10 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
                 train_counts.loc[value] = 0
             train_counts.sort_index(inplace=True)
         
-        train_group = train.groupby(feature).agg({target:agg_func})
+        train_group = train.groupby(feature).agg({feature:'count', target:agg_func})
+        train_group.columns = [feature+'_count', target]
         for value in diff_test:
-            train_group.loc[value] = np.nan
+            train_group.loc[value, :] = [np.nan,np.nan]
         train_group.sort_index(inplace=True)
         
         ax.bar(train_counts.index, train_counts.values, alpha=alpha, label='train', color='tab:cyan')
@@ -213,11 +222,56 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
         if index == 0: ax2.legend(loc='upper right'), ax.legend(loc='lower left')
         if (index+1) % ncols == 0 or (index+1)==len(features): ax2.set_ylabel('Target Rate')
         if (index+1) % ncols == 1: ax.set_ylabel('Count')
+
+        # Stats
+        ['feature', 'train_nunique', 'test_nunique', 'val_nunique', 'train_test_rmse', 'train_val_rmse', 'val_test_rmse', 'train_val_target_rmse']
+        row_dict = {}
+        row_dict['feature'] = feature
+        row_dict['train_nunique'] = train[feature].nunique()
+
+        if test is not None: 
+            diff_test_stats = set(diff_test) - set(test_counts.index)            
+            test_group = test.groupby(feature).agg({feature:'count', target:agg_func})
+            test_group.columns = [feature+'_count', target]
+            for value in diff_test_stats:
+                test_group.loc[value, :] = [np.nan, np.nan]
+            test_group.sort_index(inplace=True)
+
+            row_dict['test_nunique'] = test[feature].nunique()
+            row_dict['train_test_rmse'] = np.sqrt(np.sum((train_group[feature+'_count'] - test_group[feature+'_count'])**2))
+
+            if val is not None: 
+                diff_val_stats = set(diff_test) - set(val_counts.index)            
+                val_group = val.groupby(feature).agg({feature:'count', target:agg_func})
+                val_group.columns = [feature+'_count', target]
+                for value in diff_val_stats:
+                    val_group.loc[value, :] = [np.nan, np.nan]
+                val_group.sort_index(inplace=True)
+
+                row_dict['val_nunique'] = val[feature].nunique()
+                row_dict['val_test_rmse'] = np.sqrt(np.sum((test_group[feature+'_count'] - val_group[feature+'_count'])**2))
         
+        if val is not None: 
+            diff_val_stats = set(diff_test) - set(val_counts.index)            
+            val_group = val.groupby(feature).agg({feature:'count', target:agg_func})
+            val_group.columns = [feature+'_count', target]
+            for value in diff_val_stats:
+                val_group.loc[value, :] = [np.nan, np.nan]
+            val_group.sort_index(inplace=True)
+
+            row_dict['val_nunique'] = val[feature].nunique()
+            row_dict['train_val_rmse'] = np.sqrt(np.sum((train_group[feature+'_count'] - val_group[feature+'_count'])**2))
+            row_dict['train_val_target_rmse'] = np.sqrt(np.sum((train_group[target] - val_group[target])**2))
+        df_stats = df_stats.append(row_dict, ignore_index=True)
+    
     for ax in axes.ravel()[len(features):]:
         ax.set_visible(False)
     fig.tight_layout()
     plt.show()
+    df_stats.dropna(axis=1, inplace=True)
+    if val is not None:  df_stats.sort_values('train_val_rmse', inplace=True)
+    if test is not None:  df_stats.sort_values('train_test_rmse', inplace=True)
+    return df_stats
 
 
 def _return_min(data, feature):
