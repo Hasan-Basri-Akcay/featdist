@@ -36,8 +36,17 @@ df_stats
 ```
 from featdist import categorical_ttt_dist
 
-categorical_ttt_dist(train=X_train, test=X_test, features=cat_features, target='target_reg')
-categorical_ttt_dist(train=X_train, val=X_val, features=cat_features, target='target_reg')
+df_stats = categorical_ttt_dist(train=X_train, test=X_test, features=cat_features, target='target_reg')
+df_stats
 ```
 <img src="/outputs/categorical_ttt_train_test.png?raw=true"/>
+<img src="/outputs/categorical_ttt_train_test_df.png?raw=true"/>
+
+```
+from featdist import categorical_ttt_dist
+
+df_stats = categorical_ttt_dist(train=X_train, val=X_val, features=cat_features, target='target_reg')
+df_stats
+```
 <img src="/outputs/categorical_ttt_train_val.png?raw=true"/>
+<img src="/outputs/categorical_ttt_train_val_df.png?raw=true"/>
