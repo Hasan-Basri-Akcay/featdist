@@ -229,6 +229,7 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
         row_dict = {}
         row_dict['feature'] = feature
         row_dict['train_nunique'] = train[feature].nunique()
+        max_rate = max(train.shape[0], _return_shape(test), _return_shape(val))
 
         if test is not None: 
             diff_test_stats = set(diff_test) - set(test_counts.index)            
@@ -240,7 +241,7 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
             test_group.sort_index(inplace=True)
 
             row_dict['test_nunique'] = test[feature].nunique()
-            row_dict['train_test_rmse'] = np.sqrt(np.sum((train_group[feature+'_count'] - test_group[feature+'_count'])**2))
+            row_dict['train_test_rmse'] = np.sqrt(np.sum((train_group[feature+'_count'] - test_group[feature+'_count'])**2))*max_rate
             row_dict['train_test_same_unique'] = set(train[feature].unique()) == set(test[feature].unique())
 
             if val is not None: 
@@ -253,7 +254,7 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
                 val_group.sort_index(inplace=True)
 
                 row_dict['val_nunique'] = val[feature].nunique()
-                row_dict['val_test_rmse'] = np.sqrt(np.sum((test_group[feature+'_count'] - val_group[feature+'_count'])**2))
+                row_dict['val_test_rmse'] = np.sqrt(np.sum((test_group[feature+'_count'] - val_group[feature+'_count'])**2))*max_rate
                 row_dict['val_test_same_unique'] = set(val[feature].unique()) == set(test[feature].unique())
         
         if val is not None: 
@@ -266,7 +267,7 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
             val_group.sort_index(inplace=True)
 
             row_dict['val_nunique'] = val[feature].nunique()
-            row_dict['train_val_rmse'] = np.sqrt(np.sum((train_group[feature+'_count'] - val_group[feature+'_count'])**2))
+            row_dict['train_val_rmse'] = np.sqrt(np.sum((train_group[feature+'_count'] - val_group[feature+'_count'])**2))*max_rate
             row_dict['train_val_target_rmse'] = np.sqrt(np.sum((train_group[target] - val_group[target])**2))
             row_dict['train_val_same_unique'] = set(train[feature].unique()) == set(val[feature].unique())
         df_stats = df_stats.append(row_dict, ignore_index=True)
@@ -276,8 +277,8 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
     fig.tight_layout()
     plt.show()
     df_stats.dropna(axis=1, inplace=True)
-    if val is not None:  df_stats.sort_values('train_val_rmse', inplace=True)
     if test is not None:  df_stats.sort_values('train_test_rmse', inplace=True)
+    if val is not None:  df_stats.sort_values('train_val_target_rmse', inplace=True)
     return df_stats
 
 
@@ -293,6 +294,13 @@ def _return_max(data, feature):
         return data[feature].max()
     except:
         return -999999
+
+
+def _return_shape(data):
+    try:
+        return data.shape[0]
+    except:
+        return 0
 
 
 def _find_trend_changes(data):
