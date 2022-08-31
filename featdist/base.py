@@ -204,6 +204,7 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
         
         train_group = train.groupby(feature).agg({feature:'count', target:agg_func})
         train_group.columns = [feature+'_count', target]
+        train_group[feature+'_count'] /= train.shape[0]
         for value in diff_test:
             train_group.loc[value, :] = [np.nan,np.nan]
         train_group.sort_index(inplace=True)
@@ -233,6 +234,7 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
             diff_test_stats = set(diff_test) - set(test_counts.index)            
             test_group = test.groupby(feature).agg({feature:'count', target:agg_func})
             test_group.columns = [feature+'_count', target]
+            test_group[feature+'_count'] /= test.shape[0]
             for value in diff_test_stats:
                 test_group.loc[value, :] = [np.nan, np.nan]
             test_group.sort_index(inplace=True)
@@ -245,6 +247,7 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
                 diff_val_stats = set(diff_test) - set(val_counts.index)            
                 val_group = val.groupby(feature).agg({feature:'count', target:agg_func})
                 val_group.columns = [feature+'_count', target]
+                val_group[feature+'_count'] /= val.shape[0]
                 for value in diff_val_stats:
                     val_group.loc[value, :] = [np.nan, np.nan]
                 val_group.sort_index(inplace=True)
@@ -257,6 +260,7 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
             diff_val_stats = set(diff_test) - set(val_counts.index)            
             val_group = val.groupby(feature).agg({feature:'count', target:agg_func})
             val_group.columns = [feature+'_count', target]
+            val_group[feature+'_count'] /= val.shape[0]
             for value in diff_val_stats:
                 val_group.loc[value, :] = [np.nan, np.nan]
             val_group.sort_index(inplace=True)
