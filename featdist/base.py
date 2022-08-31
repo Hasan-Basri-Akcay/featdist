@@ -179,7 +179,8 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
         nrows += 1
     fig, axes = plt.subplots(nrows, ncols, figsize=(figsize, round(nrows*figsize/ncols)), sharey=sharey)
     df_stats = pd.DataFrame(columns=['feature', 'train_nunique', 'test_nunique', 'val_nunique', 'train_test_rmse',
-                                    'train_val_rmse', 'val_test_rmse', 'train_val_target_rmse'])
+                                    'train_val_rmse', 'val_test_rmse', 'train_val_target_rmse', 
+                                    'train_test_same_unique', 'train_val_same_unique', 'val_test_same_unique'])
     for index, (ax,feature) in enumerate(zip(axes.ravel()[:len(features)],features)):        
         # Graph
         train_counts = train[feature].value_counts()
@@ -224,7 +225,6 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
         if (index+1) % ncols == 1: ax.set_ylabel('Count')
 
         # Stats
-        ['feature', 'train_nunique', 'test_nunique', 'val_nunique', 'train_test_rmse', 'train_val_rmse', 'val_test_rmse', 'train_val_target_rmse']
         row_dict = {}
         row_dict['feature'] = feature
         row_dict['train_nunique'] = train[feature].nunique()
@@ -239,6 +239,7 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
 
             row_dict['test_nunique'] = test[feature].nunique()
             row_dict['train_test_rmse'] = np.sqrt(np.sum((train_group[feature+'_count'] - test_group[feature+'_count'])**2))
+            row_dict['train_test_same_unique'] = set(train[feature].unique()) == set(test[feature].unique())
 
             if val is not None: 
                 diff_val_stats = set(diff_test) - set(val_counts.index)            
@@ -250,6 +251,7 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
 
                 row_dict['val_nunique'] = val[feature].nunique()
                 row_dict['val_test_rmse'] = np.sqrt(np.sum((test_group[feature+'_count'] - val_group[feature+'_count'])**2))
+                row_dict['val_test_same_unique'] = set(val[feature].unique()) == set(test[feature].unique())
         
         if val is not None: 
             diff_val_stats = set(diff_test) - set(val_counts.index)            
@@ -262,6 +264,7 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
             row_dict['val_nunique'] = val[feature].nunique()
             row_dict['train_val_rmse'] = np.sqrt(np.sum((train_group[feature+'_count'] - val_group[feature+'_count'])**2))
             row_dict['train_val_target_rmse'] = np.sqrt(np.sum((train_group[target] - val_group[target])**2))
+            row_dict['train_val_same_unique'] = set(train[feature].unique()) == set(val[feature].unique())
         df_stats = df_stats.append(row_dict, ignore_index=True)
     
     for ax in axes.ravel()[len(features):]:
