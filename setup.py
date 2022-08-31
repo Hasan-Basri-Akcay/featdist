@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="featdist",
-    version="v0.1.0",
+    version="v0.1.1",
     author="Hasan Basri Akcay",
     author_email="hasan.basri.akcay@gmail.com",
     description="Train test target distribution function for machine learning",
