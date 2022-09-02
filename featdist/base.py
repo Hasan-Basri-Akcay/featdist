@@ -55,7 +55,9 @@ def numerical_ttt_dist(train=None, test=None, val=None, features=[], agg_func='m
                 val['bin']=out
                 val_bins_target = val.groupby(['bin']).agg({target:agg_func})
                 np_ylim[index] = min(np_ylim[index][0], val_bins_target[target].min()), max(np_ylim[index][1], val_bins_target[target].max())
-        ymin, ymax = np_ylim[0].min(), np_ylim[1].max()
+        ymin, ymax = np_ylim[:,0].min(), np_ylim[:,1].max()
+        distance = ymax - ymin
+        ymin, ymax = ymin-distance/10, ymax+distance/10
     else:
         ymin, ymax = ylim[0], ylim[1]
 
@@ -111,15 +113,19 @@ def numerical_ttt_dist(train=None, test=None, val=None, features=[], agg_func='m
         if test is not None:
             row_dict['test_trend_changes'] = _find_trend_changes(test_bins_target['bin_count'])
             row_dict['train_test_trend_corr'] = np.corrcoef(bins_target['bin_count'].fillna(0), test_bins_target['bin_count'].fillna(0))[0, 1]
+            if np.isnan(row_dict['train_test_trend_corr']): row_dict['train_test_trend_corr'] = 0
             if val is not None:
                 row_dict['val_trend_changes'] = _find_trend_changes(val_bins_target['bin_count'])
                 row_dict['val_target_trend_changes'] = _find_trend_changes(val_bins_target[target])
                 row_dict['val_test_trend_corr'] = np.corrcoef(test_bins_target['bin_count'].fillna(0), val_bins_target['bin_count'].fillna(0))[0, 1]
+                if np.isnan(row_dict['val_test_trend_corr']): row_dict['val_test_trend_corr'] = 0
         if val is not None:
             row_dict['val_trend_changes'] = _find_trend_changes(val_bins_target['bin_count'])
             row_dict['val_target_trend_changes'] = _find_trend_changes(val_bins_target[target])
             row_dict['train_val_trend_corr'] = np.corrcoef(bins_target['bin_count'].fillna(0), val_bins_target['bin_count'].fillna(0))[0, 1]
             row_dict['train_val_target_trend_corr'] = np.corrcoef(bins_target[target].fillna(0), val_bins_target[target].fillna(0))[0, 1]
+            if np.isnan(row_dict['train_val_trend_corr']): row_dict['train_val_trend_corr'] = 0
+            if np.isnan(row_dict['train_val_target_trend_corr']): row_dict['train_val_target_trend_corr'] = 0
         df_stats = df_stats.append(row_dict, ignore_index=True)
     train.drop('bin', axis=1, inplace=True)
     #if val is not None: val.drop('bin', axis=1, inplace=True)
@@ -169,7 +175,9 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
             if val is not None:
                 val_group = val.groupby(feature).agg({target:agg_func})
                 np_ylim[index] = min(np_ylim[index][0], val_group[target].min()), max(np_ylim[index][1], val_group[target].max())
-        ymin, ymax = np_ylim[0].min(), np_ylim[1].max()
+        ymin, ymax = np_ylim[:,0].min(), np_ylim[:,1].max()
+        distance = ymax - ymin
+        ymin, ymax = ymin-distance/10, ymax+distance/10
     else:
         ymin, ymax = ylim[0], ylim[1]
 
@@ -233,11 +241,11 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
 
         if test is not None: 
             diff_test_stats = set(diff_test) - set(test_counts.index)            
-            test_group = test.groupby(feature).agg({feature:'count', target:agg_func})
-            test_group.columns = [feature+'_count', target]
+            test_group = test.groupby(feature).agg({feature:'count'})
+            test_group.columns = [feature+'_count']
             test_group[feature+'_count'] /= test.shape[0]
             for value in diff_test_stats:
-                test_group.loc[value, :] = [np.nan, np.nan]
+                test_group.loc[value] = np.nan
             test_group.sort_index(inplace=True)
 
             row_dict['test_nunique'] = test[feature].nunique()
