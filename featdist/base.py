@@ -7,10 +7,13 @@ kaggle  :   <https://www.kaggle.com/hasanbasriakcay>
 
 import pandas as pd
 import numpy as np
+import gc
 import matplotlib.pyplot as plt
+from matplotlib.offsetbox import AnchoredText
+from scipy.stats import f_oneway
         
 
-def numerical_ttt_dist(train=None, test=None, val=None, features=[], agg_func='mean', target='target', bin_num=10, ncols=3, figsize=16, ylim=(), sharey=False):
+def numerical_ttt_dist(train=None, test=None, val=None, features=[], agg_func='mean', target='target', nbins=10, ncols=3, s='auto', figsize=16, ylim=(), sharey=False, corr=True):
     '''
     The Numerical Train Test Target Distribution function helps us to understand data distribution better. It can plot train, test, validation, and the target in 
     one graph for each feature.
@@ -22,11 +25,13 @@ def numerical_ttt_dist(train=None, test=None, val=None, features=[], agg_func='m
         features (list): Numeric features in the dataframe.
         agg_func (str): The Pandas aggregation functions for the target.
         target (str): The target feature name.
-        bin_num (int): Bin number for NumPy linspace.
+        nbins (int): Bin number for NumPy linspace.
         ncols (int): Column number of the graph.
+        s (int):
         figsize (int): Figure size.
         ylim (tuple): Y-limits of the axes.
         sharey (bool): Controls sharing of properties among y (sharey) axes.
+        corr (bool):
 
     Returns:
         DataFrame
@@ -36,6 +41,8 @@ def numerical_ttt_dist(train=None, test=None, val=None, features=[], agg_func='m
     if len(features) == 0:
         features = train.columns.tolist()
     
+    if s == 'auto': s = 3**2*30 / (ncols*ncols)
+    
     alpha = 1 / sum(x is not None for x in [train, test, val])
 
     if len(ylim) == 0:
@@ -43,7 +50,7 @@ def numerical_ttt_dist(train=None, test=None, val=None, features=[], agg_func='m
         for index, feature in enumerate(features):
             mi = min(train[feature].min(), _return_min(test,feature), _return_min(val,feature))
             ma = max(train[feature].max(), _return_max(test,feature), _return_max(val,feature))
-            bins = np.linspace(mi, ma, bin_num)
+            bins = np.linspace(mi, ma, nbins)
 
             out, bins = pd.cut(train[feature].values, bins=bins, retbins=True, right=False)
             train['bin']=out
@@ -73,12 +80,23 @@ def numerical_ttt_dist(train=None, test=None, val=None, features=[], agg_func='m
         # Graph
         mi = min(train[feature].min(), _return_min(test,feature), _return_min(val,feature))
         ma = max(train[feature].max(), _return_max(test,feature), _return_max(val,feature))
-        bins = np.linspace(mi, ma, bin_num)
+        bins = np.linspace(mi, ma, nbins)
         
         out, bins = pd.cut(train[feature].values, bins=bins, retbins=True, right=False)
         train['bin']=out
         bins_target = train.groupby(['bin']).agg({'bin':'count', target:agg_func})
         bins_target.columns = ['bin_count', target]
+
+        if corr:
+            corr_value = train[feature].corr(train[target])
+            at = AnchoredText(
+                    f"{corr_value:.2f}",
+                    prop=dict(size="medium"),
+                    frameon=True,
+                    loc="upper left",
+                )
+            at.patch.set_boxstyle("square, pad=0.0")
+            ax.add_artist(at)
         
         ax.hist(train[feature], bins=bins, alpha=alpha, density=True, label='train', color='tab:cyan')
         if test is not None:
@@ -97,8 +115,8 @@ def numerical_ttt_dist(train=None, test=None, val=None, features=[], agg_func='m
         
         ax2 = ax.twinx()
         mean_bins = [(bins[i]+bins[i+1])/2 for i in range(0, len(bins)-1)]
-        ax2.scatter(mean_bins, bins_target[target], label='train target rate', color='tab:purple')
-        if val is not None:  ax2.scatter(mean_bins, val_bins_target[target], label='val target rate', color='tab:gray')
+        ax2.scatter(mean_bins, bins_target[target], label='train target rate', color='tab:purple', s=s)
+        if val is not None:  ax2.scatter(mean_bins, val_bins_target[target], label='val target rate', color='tab:gray', s=s)
         ax2.set_ylim([ymin, ymax])
         if index == 0: ax2.legend(loc='upper right'), ax.legend(loc='lower left')
         if (index+1) % ncols == 0 or (index+1)==len(features): ax2.set_ylabel('Target Rate')
@@ -128,18 +146,19 @@ def numerical_ttt_dist(train=None, test=None, val=None, features=[], agg_func='m
             if np.isnan(row_dict['train_val_target_trend_corr']): row_dict['train_val_target_trend_corr'] = 0
         df_stats = df_stats.append(row_dict, ignore_index=True)
     train.drop('bin', axis=1, inplace=True)
+    #if test is not None: test.drop('bin', axis=1, inplace=True)
     #if val is not None: val.drop('bin', axis=1, inplace=True)
     for ax in axes.ravel()[len(features):]:
         ax.set_visible(False)
     fig.tight_layout()
     plt.show()
     df_stats.dropna(axis=1, inplace=True)
-    if val is not None:  df_stats.sort_values('train_val_trend_corr', inplace=True, ascending=False)
-    if test is not None:  df_stats.sort_values('train_test_trend_corr', inplace=True, ascending=False)
+    if val is not None:  df_stats.sort_values('train_val_trend_corr', inplace=True, ascending=False), val.drop('bin', axis=1, inplace=True)
+    if test is not None:  df_stats.sort_values('train_test_trend_corr', inplace=True, ascending=False), test.drop('bin', axis=1, inplace=True)
     return df_stats
 
 
-def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='target', ncols=3, agg_func='mean', figsize=16, ylim=(), sharey=False):
+def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='target', ncols=3, s='auto', agg_func='mean', figsize=16, ylim=(), sharey=False, anova=True):
     '''
     The Categorical Train Test Target Distribution function helps us to understand data distribution better. It can plot train, test, validation, and the target in 
     one graph for each feature.
@@ -164,6 +183,8 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
     if len(features) == 0:
         features = train.columns.tolist()
     
+    if s == 'auto': s = 3**2*30 / (ncols*ncols)
+
     alpha = 1 / sum(x is not None for x in [train, test, val])
 
     if len(ylim) == 0:
@@ -216,16 +237,35 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
         for value in diff_test:
             train_group.loc[value, :] = [np.nan,np.nan]
         train_group.sort_index(inplace=True)
+
+        if anova:
+            unique_list = []
+            for unique_v in train[feature].unique():
+                unique_list.append(train.loc[train[feature] == unique_v, target])
+            anova_value = f_oneway(*unique_list)[0]
+            anova_value = round(anova_value/1000, 2)
+
+            del unique_list
+            gc.collect()
+            
+            at = AnchoredText(
+                    f"{anova_value:.2f}",
+                    prop=dict(size="medium"),
+                    frameon=True,
+                    loc="upper left",
+                )
+            at.patch.set_boxstyle("square, pad=0.0")
+            ax.add_artist(at)
         
         ax.bar(train_counts.index, train_counts.values, alpha=alpha, label='train', color='tab:cyan')
         if test is not None: ax.bar(test_counts.index, test_counts.values, alpha=alpha, label='test', color='tab:red')
         ax2 = ax.twinx()
-        ax2.scatter(train_group.index, train_group[target], label='train target rate', color='tab:purple')
+        ax2.scatter(train_group.index, train_group[target], label='train target rate', color='tab:purple', s=s)
         
         if val is not None:  
             val_group = val.groupby(feature).agg({target:agg_func})
             ax.bar(val_counts.index, val_counts.values, alpha=alpha, label='val', color='tab:gray')
-            ax2.scatter(val_group.index, val_group[target], label='val target rate', color='tab:gray')
+            ax2.scatter(val_group.index, val_group[target], label='val target rate', color='tab:gray', s=s)
         ax.set_xlabel(feature)
         ax2.set_ylim([ymin, ymax])
         
