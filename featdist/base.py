@@ -55,12 +55,14 @@ def numerical_ttt_dist(train=None, test=None, val=None, features=[], agg_func='m
             out, bins = pd.cut(train[feature].values, bins=bins, retbins=True, right=False)
             train['bin']=out
             bins_target = train.groupby(['bin']).agg({target:agg_func})
+            bins_target.fillna(bins_target[target].mean(), inplace=True)
             np_ylim[index] = min(bins_target[target]), max(bins_target[target])
-            
+
             if val is not None:
                 out, bins = pd.cut(val[feature].values, bins=bins, retbins=True)
                 val['bin']=out
                 val_bins_target = val.groupby(['bin']).agg({target:agg_func})
+                val_bins_target.fillna(val_bins_target[target].mean(), inplace=True)
                 np_ylim[index] = min(np_ylim[index][0], val_bins_target[target].min()), max(np_ylim[index][1], val_bins_target[target].max())
         ymin, ymax = np_ylim[:,0].min(), np_ylim[:,1].max()
         distance = ymax - ymin
