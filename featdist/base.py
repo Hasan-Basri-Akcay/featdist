@@ -44,13 +44,14 @@ def numerical_ttt_dist(train=None, test=None, val=None, features=[], agg_func='m
     if s == 'auto': s = 3**2*30 / (ncols*ncols)
     
     alpha = 1 / sum(x is not None for x in [train, test, val])
+    OFFSET = 0.000000000000001
 
     if len(ylim) == 0:
         np_ylim = np.zeros((len(features), 2))
         for index, feature in enumerate(features):
             mi = min(train[feature].min(), _return_min(test,feature), _return_min(val,feature))
-            ma = max(train[feature].max(), _return_max(test,feature), _return_max(val,feature))
-            bins = np.linspace(mi, ma, nbins)
+            ma = max(train[feature].max(), _return_max(test,feature), _return_max(val,feature)) + OFFSET
+            bins = np.linspace(mi, ma, nbins + 1)
 
             out, bins = pd.cut(train[feature].values, bins=bins, retbins=True, right=False)
             train['bin']=out
@@ -81,8 +82,8 @@ def numerical_ttt_dist(train=None, test=None, val=None, features=[], agg_func='m
     for index, (ax,feature) in enumerate(zip(axes.ravel()[:len(features)],features)):
         # Graph
         mi = min(train[feature].min(), _return_min(test,feature), _return_min(val,feature))
-        ma = max(train[feature].max(), _return_max(test,feature), _return_max(val,feature))
-        bins = np.linspace(mi, ma, nbins)
+        ma = max(train[feature].max(), _return_max(test,feature), _return_max(val,feature)) + OFFSET
+        bins = np.linspace(mi, ma, nbins + 1)
         
         out, bins = pd.cut(train[feature].values, bins=bins, retbins=True, right=False)
         train['bin']=out
