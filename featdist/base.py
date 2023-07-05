@@ -357,6 +357,7 @@ def _return_shape(data):
 def _find_trend_changes(data):
     data_diff = data.diff()
     data_diff = data_diff > 0
+    data_diff = data_diff.values
     counts = 0
     for index in range(1,len(data_diff)-1):
         if data_diff[index] != data_diff[index+1]:
