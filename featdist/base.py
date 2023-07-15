@@ -262,6 +262,7 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
         
         ax.bar(train_counts.index, train_counts.values, alpha=alpha, label='train', color='tab:cyan')
         if test is not None: ax.bar(test_counts.index, test_counts.values, alpha=alpha, label='test', color='tab:red')
+        ax.tick_params(axis='x', labelrotation=labelrotation)
         ax2 = ax.twinx()
         ax2.scatter(train_group.index, train_group[target], label='train target rate', color='tab:purple', s=s)
         
@@ -271,7 +272,6 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
             ax2.scatter(val_group.index, val_group[target], label='val target rate', color='tab:gray', s=s)
         ax.set_xlabel(feature)
         ax2.set_ylim([ymin, ymax])
-        ax.tick_params(axis='x', labelrotation=labelrotation)
         
         if index == 0: ax2.legend(loc='upper right'), ax.legend(loc='lower left')
         if (index+1) % ncols == 0 or (index+1)==len(features): ax2.set_ylabel('Target Rate')
