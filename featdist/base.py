@@ -161,7 +161,7 @@ def numerical_ttt_dist(train=None, test=None, val=None, features=[], agg_func='m
     return df_stats
 
 
-def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='target', ncols=3, s='auto', agg_func='mean', figsize=16, ylim=(), sharey=False, anova=True):
+def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='target', ncols=3, s='auto', agg_func='mean', labelrotation=0, figsize=16, ylim=(), sharey=False, anova=True):
     '''
     The Categorical Train Test Target Distribution function helps us to understand data distribution better. It can plot train, test, validation, and the target in 
     one graph for each feature.
@@ -271,6 +271,7 @@ def categorical_ttt_dist(train=None, test=None, val=None, features=[], target='t
             ax2.scatter(val_group.index, val_group[target], label='val target rate', color='tab:gray', s=s)
         ax.set_xlabel(feature)
         ax2.set_ylim([ymin, ymax])
+        ax.tick_params(axis='x', labelrotation=labelrotation)
         
         if index == 0: ax2.legend(loc='upper right'), ax.legend(loc='lower left')
         if (index+1) % ncols == 0 or (index+1)==len(features): ax2.set_ylabel('Target Rate')
