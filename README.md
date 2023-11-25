@@ -5,6 +5,13 @@ LinkedIn: https://www.linkedin.com/in/hasan-basri-akcay
 # featdist
 Featdist (Train Test Target Distribution) helps with feature understanding, calculating feature importances, feature comparison, feature debugging, and leakage detection
 
+[![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/Hasan-Basri-Akcay/featdist/python-publish.yml?label=python-package&logo=github)](https://github.com/Hasan-Basri-Akcay/featdist/actions)
+[![Docs](https://img.shields.io/badge/docs-passing-green)](https://medium.com/@hasan.basri.akcay)
+[![PyPI](https://img.shields.io/pypi/v/featdist?logo=python&color=blue)](https://pypi.org/project/featdist/)
+[![Python](https://img.shields.io/pypi/pyversions/featdist?logo=python)](https://pypi.org/project/featdist/)
+[![License](https://img.shields.io/badge/license-MIT-blue)](https://opensource.org/license/mit/)
+![GitHub followers](https://img.shields.io/github/followers/Hasan-Basri-Akcay?logo=github)
+
 ## Installation
 ```
 pip install featdist
